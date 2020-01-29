@@ -42,6 +42,48 @@ namespace MineSweeper
                 throw new GameWonException();
         }
 
+        /// <summary>
+        /// Not really memory efficient, but on cases where most of the board is filled with mines, it's much faster.
+        /// </summary>
+        internal void AddMines(int[] safe)
+        {
+            GameMines = new List<Tuple<int, int>>(Mines);
+
+            //create possible posititions
+            List<Tuple<int, int>> positions = new List<Tuple<int, int>>(0);
+
+            for(int i = 0; i < Rows; i++)
+            {
+                for(int j = 0; j < Columns; j++)
+                {
+                    if (i == safe[0] - 1 &&
+                        j == safe[1] - 1)
+                        continue;
+                    positions.Add(new Tuple<int, int>(i, j));
+                }
+            }
+
+            Random rand = new Random();
+            int index, row, column;
+
+            for(int k = 0; k < Mines; k++)
+            {
+                index = rand.Next(1, positions.Count) - 1;
+
+                row = positions[index].Item1;
+                column = positions[index].Item2;
+
+                if (Board[row, column] == default(GenericField))
+                {
+                    Board[row, column] = new MineField(row, column);
+
+                    GameMines.Add(new Tuple<int, int>(row, column));
+                }
+
+                positions.RemoveAt(index);
+            }
+        }
+
         private void UncoverSafeFields(int row, int column)
         {
             for (int i = 0; i < 8; i++)
@@ -92,33 +134,6 @@ namespace MineSweeper
             Board = new GenericField[Rows, Columns];
 
             AvailablePlays = (Rows * Columns) - Mines;
-        }
-
-        public void AddMines(int[] parameters)
-        {
-            GameMines = new List<Tuple<int, int>>(Mines);
-
-            Random rand = new Random();
-
-            int row;
-            int column;
-
-            for (int i = 0; i < Mines; i++)
-            {
-                row = rand.Next(Rows - 1);
-                column = rand.Next(Columns - 1);
-
-                if (Board[row, column] == default(GenericField))
-                {
-                    Board[row, column] = new MineField(row, column);
-
-                    GameMines.Add(new Tuple<int, int>(row, column));
-                }
-                else
-                {
-                    i--;
-                }
-            }
         }
 
         public void AddFields()
@@ -223,7 +238,14 @@ namespace MineSweeper
                 traceBoard += i + 1; traceBoard += "  ";
                 for (int j = 0; j < Columns; j++)
                 {
-                    traceBoard += Board[i, j].ToString();
+                    if (Board[i, j] == null)
+                    {
+                        traceBoard += "║ ".PadRight(3);
+                    }
+                    else
+                    {
+                        traceBoard += Board[i, j].ToString();
+                    }
                 } traceBoard += "║";
 
                 traceBoard += (i < Rows - 1)? AddLine(Columns) : "";

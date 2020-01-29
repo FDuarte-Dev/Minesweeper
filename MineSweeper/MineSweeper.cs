@@ -31,12 +31,31 @@ namespace MineSweeper
 
             board.InitBoard(gameParams);
 
-            board.AddMines(gameParams);
+            int[] play = GetFirstPlay();
+
+            board.AddMines(play);
 
             board.AddFields();
 
-            Play();
+            PlayGame(play);
             PlayAgain();
+        }
+
+        private static int[] GetFirstPlay()
+        {
+            Clean();
+            Console.WriteLine("Minesweeper");
+            AddSeparator();
+
+            Console.WriteLine(board.ToString());
+
+            Console.WriteLine("Select a field to dig:");
+
+            AddSeparator();
+
+            int[] play = Array.ConvertAll(Console.ReadLine().Split(' '), playTemp => Convert.ToInt32(playTemp));
+
+            return play;
         }
 
         private static void PlayAgain()
@@ -49,9 +68,11 @@ namespace MineSweeper
                 Init();
         }
 
-        private static void Play()
+        private static void PlayGame(int [] firstPlay)
         {
-            do
+            bool gameRunning = DoPlay(firstPlay[0], firstPlay[1]);
+
+            while (gameRunning)
             {
                 Clean();
                 Console.WriteLine("Minesweeper");
@@ -63,63 +84,76 @@ namespace MineSweeper
 
                 AddSeparator();
 
-                try
+                int[] play = Array.ConvertAll(Console.ReadLine().Split(' '), playTemp => Convert.ToInt32(playTemp));
+
+                gameRunning = DoPlay(play[0], play[1]);
+            }
+        }
+
+        private static bool DoPlay(int playRow, int playColumn)
+        {
+            try
+            {
+                if (playRow == 0 ||
+                    playColumn == 0)
                 {
-                    int[] play = Array.ConvertAll(Console.ReadLine().Split(' '), arTemp => Convert.ToInt32(arTemp));
-
-                    if(play[0] == 0 ||
-                       play[1] == 0)
-                    {
-                        return;
-                    }
-
-                    board.Play(play[0] - 1,
-                               play[1] - 1);
-
-                    Console.Beep();
+                    return false;
                 }
-                catch (GameWonException)
-                {
-                    Clean();
 
-                    board.UncoverBoard();
-                    Console.WriteLine(board.ToString());
+                board.Play(playRow - 1,
+                           playColumn - 1);
 
-                    Console.WriteLine("Congratulations!!");
-                    Console.WriteLine("You Win");
+                Console.Beep();
 
-                    Console.Beep(540, 1000);
+                return true;
+            }
+            catch (GameWonException)
+            {
+                Clean();
 
-                    Console.ReadKey();
-                    return;
-                }
-                catch (AlreadyDugException)
-                {
-                    Console.WriteLine("Already dug that position.");
-                    Console.ReadKey();
-                }
-                catch (InvalidPositionException)
-                {
-                    Console.WriteLine("Invalid position to dig.");
-                    Console.ReadKey();
-                }
-                catch (GameLostException)
-                {
-                    Clean();
-                    Console.WriteLine("Minesweeper");
-                    AddSeparator();
+                board.UncoverBoard();
+                Console.WriteLine(board.ToString());
 
-                    board.UncoverBoard();
+                Console.WriteLine("Congratulations!!");
+                Console.WriteLine("You Win");
 
-                    Console.WriteLine(board.ToString());
+                Console.Beep(540, 1000);
 
-                    Console.WriteLine("Game Over!");
-                    Console.Beep(180, 1000);
-                    Console.ReadKey();
-                    return;
-                }
-                catch (Exception) { }
-            } while (true);
+                Console.ReadKey();
+                return false;
+            }
+            catch (AlreadyDugException)
+            {
+                Console.WriteLine("Already dug that position.");
+                Console.ReadKey();
+                return true;
+            }
+            catch (InvalidPositionException)
+            {
+                Console.WriteLine("Invalid position to dig.");
+                Console.ReadKey();
+                return true;
+            }
+            catch (GameLostException)
+            {
+                Clean();
+                Console.WriteLine("Minesweeper");
+                AddSeparator();
+
+                board.UncoverBoard();
+
+                Console.WriteLine(board.ToString());
+
+                Console.WriteLine("Game Over!");
+                Console.Beep(180, 1000);
+                Console.ReadKey();
+                return false;
+            }
+            catch (Exception) 
+            {
+                //Hmmmm.... Let's ignore this one
+                return true;
+            }
         }
 
         private static void GetGameParameters()
